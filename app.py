@@ -1,17 +1,17 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- Konfigurasi Halaman (Harus dipanggil pertama kali) ---
-st.set_page_config(page_title="AI Meeting Scribe Pro", page_icon="🎙️", layout="wide")
+# --- Konfigurasi Halaman ---
+st.set_page_config(page_title="iNotulensi DLI UM ver 1.0", page_icon="🎙️", layout="wide")
 
-# --- Konfigurasi API (Menggunakan Secrets) ---
+# --- Konfigurasi API ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
-    st.error("API Key belum diset di Streamlit Secrets. Silakan tambahkan GEMINI_API_KEY di dashboard Streamlit.")
+    st.error("API Key belum diset di Streamlit Secrets.")
     st.stop()
 
-# --- CSS Custom (Tabel & UI) ---
+# --- CSS Custom ---
 st.markdown("""
     <style>
     table { width: 100% !important; border-collapse: collapse; }
@@ -23,23 +23,22 @@ st.markdown("""
 # --- Fungsi Logika AI ---
 def generate_minutes(transcript, metadata):
     genai.configure(api_key=API_KEY)
-    models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    target_models = ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.5-pro']
-    model_to_use = next((m for m in target_models if m in models), models[0])
-    model = genai.GenerativeModel(model_to_use)
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = f"""
     Anda adalah sekretaris profesional. Susun notulensi rapat berdasarkan data berikut:
     DETAIL RAPAT: {metadata}
     TRANSKRIP RAPAT: {transcript}
     
-    Susun dalam format Markdown dengan tabel formal. Pastikan setiap poin pembahasan dan aksi tertulis dengan jelas.
+    Susun dalam format Markdown dengan tabel formal untuk poin pembahasan dan aksi.
     """
     response = model.generate_content(prompt)
     return response.text
 
 # --- Antarmuka Utama ---
-st.title("🎙️ AI Meeting Scribe Pro")
+# Menambahkan Logo
+st.image("https://i.ibb.co.com/23N3kpBY/Logo-DLI.png", width=150)
+st.title("iNotulensi DLI UM ver 1.0")
 
 with st.expander("📝 Detail Undangan", expanded=True):
     col1, col2 = st.columns(2)
@@ -64,16 +63,14 @@ if st.button("Generate Notulensi", type="primary"):
                 hasil = generate_minutes(transkrip, metadata)
             
             st.success("Notulensi berhasil disusun!")
-            
             st.subheader("Hasil Notulensi:")
             st.markdown(hasil)
             
+            # --- Fitur Salin ---
+            # Catatan: Tombol salin standar Streamlit tidak mendukung copy teks dari variabel Python langsung.
+            # Cara terbaik adalah menampilkan code block yang bisa dikopi user dengan mudah.
             st.divider()
-            if st.button("📋 Salin Teks ke Clipboard"):
-                st.write(f'<script>navigator.clipboard.writeText(`{hasil}`)</script>', unsafe_allow_html=True)
-                st.toast("Teks berhasil disalin ke clipboard!")
-                
-            with st.expander("Lihat Format Mentah (Markdown)"):
+            with st.expander("Lihat & Salin Markdown"):
                 st.code(hasil, language="markdown")
                 
         except Exception as e:
